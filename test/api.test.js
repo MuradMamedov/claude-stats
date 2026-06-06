@@ -15,9 +15,12 @@ test('readCredentials returns the oauth block', () => {
   const p = tmpFile(JSON.stringify({
     claudeAiOauth: { accessToken: 'tok123', refreshToken: 'r', expiresAt: 1 }
   }));
-  const creds = readCredentials(p);
-  assert.strictEqual(creds.accessToken, 'tok123');
-  fs.unlinkSync(p);
+  try {
+    const creds = readCredentials(p);
+    assert.strictEqual(creds.accessToken, 'tok123');
+  } finally {
+    fs.unlinkSync(p);
+  }
 });
 
 test('readCredentials returns null when file is missing', () => {
@@ -26,6 +29,9 @@ test('readCredentials returns null when file is missing', () => {
 
 test('readCredentials returns null on malformed json', () => {
   const p = tmpFile('{ not json');
-  assert.strictEqual(readCredentials(p), null);
-  fs.unlinkSync(p);
+  try {
+    assert.strictEqual(readCredentials(p), null);
+  } finally {
+    fs.unlinkSync(p);
+  }
 });

@@ -12,6 +12,7 @@
     "rootDir": "src",
     "sourceMap": true,
     "strict": true,
+    "noEmitOnError": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "noUncheckedIndexedAccess": true,
