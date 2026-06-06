@@ -30,6 +30,12 @@ export function activate(context: vscode.ExtensionContext): void {
       if (s.focused) {
         void poll();
       }
+    }),
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration('claudeStats')) {
+        renderOk();
+        scheduleNext();
+      }
     })
   );
 
