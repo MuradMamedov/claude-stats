@@ -51,3 +51,45 @@ test('formatCountdown past reset shows now', () => {
 test('formatClock returns HH:MM', () => {
   assert.match(formatClock(1780757400), /^\d{2}:\d{2}$/);
 });
+
+const { pickColorId, buildBarText, buildTooltip } = require('../out/logic.js');
+
+test('pickColorId uses thresholds', () => {
+  assert.strictEqual(pickColorId(50, 'allowed', 70, 90), 'charts.green');
+  assert.strictEqual(pickColorId(75, 'allowed', 70, 90), 'charts.yellow');
+  assert.strictEqual(pickColorId(95, 'allowed', 70, 90), 'charts.red');
+});
+
+test('pickColorId forces red when rejected', () => {
+  assert.strictEqual(pickColorId(10, 'rejected', 70, 90), 'charts.red');
+});
+
+test('buildBarText shows rounded percent and countdown', () => {
+  const now = 1_000_000_000_000;
+  const info = {
+    fiveHourUtil: 0.384,
+    fiveHourReset: Math.floor(now / 1000) + 2 * 3600 + 14 * 60,
+    fiveHourStatus: 'allowed',
+    sevenDayUtil: 0.23,
+    sevenDayReset: Math.floor(now / 1000) + 3600,
+    sevenDayStatus: 'allowed'
+  };
+  assert.strictEqual(buildBarText(info, now), '$(pulse) 38% · 2h14m');
+});
+
+test('buildTooltip includes both windows and status', () => {
+  const now = 1_000_000_000_000;
+  const info = {
+    fiveHourUtil: 0.38,
+    fiveHourReset: Math.floor(now / 1000) + 2 * 3600 + 14 * 60,
+    fiveHourStatus: 'allowed',
+    sevenDayUtil: 0.23,
+    sevenDayReset: Math.floor(now / 1000) + 24 * 3600,
+    sevenDayStatus: 'allowed'
+  };
+  const tip = buildTooltip(info, now, now - 30000);
+  assert.match(tip, /5h: 38%/);
+  assert.match(tip, /7d: 23%/);
+  assert.match(tip, /status: allowed/);
+  assert.match(tip, /updated 30s ago/);
+});

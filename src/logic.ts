@@ -51,3 +51,42 @@ export function formatClock(resetEpochSec: number): string {
   const mm = String(d.getMinutes()).padStart(2, '0');
   return `${hh}:${mm}`;
 }
+
+export function pickColorId(
+  utilPct: number,
+  status: string,
+  greenBelow: number,
+  yellowBelow: number
+): string {
+  if (status === 'rejected') {
+    return 'charts.red';
+  }
+  if (utilPct < greenBelow) {
+    return 'charts.green';
+  }
+  if (utilPct < yellowBelow) {
+    return 'charts.yellow';
+  }
+  return 'charts.red';
+}
+
+export function buildBarText(info: RateInfo, nowMs: number): string {
+  const pct = Math.round(info.fiveHourUtil * 100);
+  return `$(pulse) ${pct}% · ${formatCountdown(info.fiveHourReset, nowMs)}`;
+}
+
+export function buildTooltip(
+  info: RateInfo,
+  nowMs: number,
+  lastUpdatedMs: number
+): string {
+  const p5 = Math.round(info.fiveHourUtil * 100);
+  const p7 = Math.round(info.sevenDayUtil * 100);
+  const agoSec = Math.max(0, Math.round((nowMs - lastUpdatedMs) / 1000));
+  return [
+    `5h: ${p5}% — resets ${formatClock(info.fiveHourReset)} (${formatCountdown(info.fiveHourReset, nowMs)})`,
+    `7d: ${p7}% — resets ${formatClock(info.sevenDayReset)}`,
+    `status: ${info.fiveHourStatus}`,
+    `updated ${agoSec}s ago`
+  ].join('\n\n');
+}
