@@ -1,7 +1,7 @@
 {
-  "name": "status-bar-demo",
-  "displayName": "Status Bar Demo",
-  "description": "Adds a status bar item showing the word count of the active editor.",
+  "name": "claude-stats",
+  "displayName": "Claude Stats",
+  "description": "Shows your Claude 5-hour plan usage in the status bar.",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.85.0"
@@ -16,15 +16,46 @@
   "contributes": {
     "commands": [
       {
-        "command": "statusBarDemo.showWordCount",
-        "title": "Status Bar Demo: Show Word Count"
+        "command": "claudeStats.openUsage",
+        "title": "Claude Stats: Open Usage Page"
+      },
+      {
+        "command": "claudeStats.refresh",
+        "title": "Claude Stats: Refresh"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Claude Stats",
+      "properties": {
+        "claudeStats.pollIntervalMinutes": {
+          "type": "number",
+          "default": 5,
+          "minimum": 1,
+          "description": "How often to refresh usage, in minutes."
+        },
+        "claudeStats.pauseWhenUnfocused": {
+          "type": "boolean",
+          "default": true,
+          "description": "Skip scheduled refreshes while the VS Code window is not focused."
+        },
+        "claudeStats.greenBelow": {
+          "type": "number",
+          "default": 70,
+          "description": "5-hour utilization percent below which the item is green."
+        },
+        "claudeStats.yellowBelow": {
+          "type": "number",
+          "default": 90,
+          "description": "5-hour utilization percent below which the item is yellow; at or above it is red."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsc -watch -p ./",
+    "test": "npm run compile && node --test test/"
   },
   "devDependencies": {
     "@types/node": "^20.x",
