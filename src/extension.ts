@@ -10,9 +10,10 @@ import { defaultCredentialsPath, fetchRateInfo } from './api';
 const USAGE_URL = 'https://claude.ai/new#settings/usage';
 
 let item: vscode.StatusBarItem;
-let timer: NodeJS.Timeout | undefined;
+let timer: ReturnType<typeof setTimeout> | undefined;
 let lastInfo: RateInfo | undefined;
 let lastUpdatedMs = 0;
+let inFlight: Promise<void> | undefined;
 
 export function activate(context: vscode.ExtensionContext): void {
   item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
@@ -65,7 +66,18 @@ function scheduleNext(): void {
   }, minutes * 60_000);
 }
 
-async function poll(): Promise<void> {
+function poll(): Promise<void> {
+  // Collapse overlapping triggers (timer, focus, manual refresh) into one
+  // in-flight request so each cycle bills at most one API call.
+  if (!inFlight) {
+    inFlight = doPoll().finally(() => {
+      inFlight = undefined;
+    });
+  }
+  return inFlight;
+}
+
+async function doPoll(): Promise<void> {
   const cfg = config();
   if (cfg.pauseWhenUnfocused && !vscode.window.state.focused && lastInfo) {
     return;
@@ -75,12 +87,22 @@ async function poll(): Promise<void> {
     lastInfo = result.info;
     lastUpdatedMs = Date.now();
     renderOk();
-  } else if (result.kind === 'noauth') {
-    renderError('$(warning) Claude —', 'Not logged in — no Claude credentials found.');
-  } else if (result.kind === 'expired') {
-    renderError('$(warning) Claude —', 'Token expired — run Claude Code to refresh.');
-  } else {
-    renderOffline();
+    return;
+  }
+  switch (result.kind) {
+    case 'noauth':
+      renderError('$(warning) Claude —', 'Not logged in — no Claude credentials found.');
+      return;
+    case 'expired':
+      renderError('$(warning) Claude —', 'Token expired — run Claude Code to refresh.');
+      return;
+    case 'offline':
+      renderOffline();
+      return;
+    default: {
+      const _exhaustive: never = result.kind;
+      throw new Error(`unhandled fetch error: ${String(_exhaustive)}`);
+    }
   }
 }
 

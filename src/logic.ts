@@ -52,12 +52,14 @@ export function formatClock(resetEpochSec: number): string {
   return `${hh}:${mm}`;
 }
 
+export type ColorId = 'charts.green' | 'charts.yellow' | 'charts.red';
+
 export function pickColorId(
   utilPct: number,
   status: string,
   greenBelow: number,
   yellowBelow: number
-): string {
+): ColorId {
   if (status === 'rejected') {
     return 'charts.red';
   }

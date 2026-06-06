@@ -17,12 +17,18 @@ export function defaultCredentialsPath(): string {
 export function readCredentials(filePath: string): OauthCreds | null {
   try {
     const raw = fs.readFileSync(filePath, 'utf8');
-    const parsed = JSON.parse(raw);
-    return parsed?.claudeAiOauth ?? null;
+    const parsed: unknown = JSON.parse(raw);
+    const oauth = (parsed as { claudeAiOauth?: unknown }).claudeAiOauth;
+    if (!oauth || typeof oauth !== 'object') {
+      return null;
+    }
+    return oauth as OauthCreds;
   } catch {
     return null;
   }
 }
+
+const REQUEST_TIMEOUT_MS = 10_000;
 
 export type FetchResult =
   | { ok: true; info: RateInfo }
@@ -69,6 +75,10 @@ export function fetchRateInfo(credentialsPath: string): Promise<FetchResult> {
       }
     );
     req.on('error', () => resolve({ ok: false, kind: 'offline' }));
+    req.setTimeout(REQUEST_TIMEOUT_MS, () => {
+      // Abort a stalled socket; the 'error' handler resolves it offline.
+      req.destroy(new Error('request timed out'));
+    });
     req.write(body);
     req.end();
   });

@@ -3,6 +3,14 @@
   "displayName": "Claude Stats",
   "description": "Shows your Claude 5-hour plan usage in the status bar.",
   "version": "0.0.1",
+  "license": "MIT",
+  "keywords": [
+    "claude",
+    "anthropic",
+    "usage",
+    "rate limit",
+    "status bar"
+  ],
   "engines": {
     "vscode": "^1.85.0"
   },
