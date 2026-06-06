@@ -28,3 +28,26 @@ test('parseRateHeaders accepts array-valued headers and missing fields', () => {
   assert.strictEqual(info.fiveHourReset, 0);
   assert.strictEqual(info.fiveHourStatus, 'unknown');
 });
+
+const { formatCountdown, formatClock } = require('../out/logic.js');
+
+test('formatCountdown shows hours and padded minutes', () => {
+  const now = 1_000_000_000_000;
+  const reset = Math.floor(now / 1000) + 2 * 3600 + 14 * 60; // 2h14m ahead
+  assert.strictEqual(formatCountdown(reset, now), '2h14m');
+});
+
+test('formatCountdown under one hour omits hours', () => {
+  const now = 1_000_000_000_000;
+  const reset = Math.floor(now / 1000) + 9 * 60; // 9m ahead
+  assert.strictEqual(formatCountdown(reset, now), '9m');
+});
+
+test('formatCountdown past reset shows now', () => {
+  const now = 1_000_000_000_000;
+  assert.strictEqual(formatCountdown(Math.floor(now / 1000) - 5, now), 'now');
+});
+
+test('formatClock returns HH:MM', () => {
+  assert.match(formatClock(1780757400), /^\d{2}:\d{2}$/);
+});
