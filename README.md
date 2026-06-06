@@ -1,98 +1,60 @@
-# Status Bar Demo
+# Claude Stats
 
-A minimal VS Code extension that adds a **status bar item** showing the word
-count of the active editor. The item updates live and is clickable.
-
-![status bar item: "✎ 42 words" in the bottom-right](https://placehold.co/300x40?text=%E2%9C%8E+42+words)
+A VS Code status bar item showing your **Claude 5-hour plan usage** (official
+numbers, color-coded), with a countdown to the next reset. Click it to open the
+Claude usage settings page.
 
 ## What it does
 
-- Shows `✎ N words` in the bottom-right status bar.
-- Recomputes on editor switch, text edit, and selection change.
-- Clicking it runs the `Status Bar Demo: Show Word Count` command, which pops an
-  info message with the current count.
-- Hides itself when no editor is open.
+- Shows `$(pulse) N% · Xh YYm` in the status bar — N = 5-hour window
+  utilization, countdown = time until that window resets.
+- Color: green below 70%, yellow below 90%, red at/above 90% (or red whenever
+  the API reports the window as `rejected`). Thresholds are configurable.
+- Tooltip shows the 5-hour and weekly (7-day) percentages, reset times, status,
+  and when it last updated.
+- Clicking opens `https://claude.ai/new#settings/usage`.
 
-## Prerequisites
+## How it gets the data
 
-- [Node.js](https://nodejs.org/) 18+ (tested on 22)
-- [VS Code](https://code.visualstudio.com/) 1.85+
+Usage comes from the Anthropic API's `anthropic-ratelimit-unified-*` response
+headers — the same numbers shown on the Claude usage page. The extension reads
+the OAuth token from `~/.claude/.credentials.json` (written by Claude Code) and
+makes a minimal request to read those headers.
 
-## Install dependencies
+**Cost note:** each refresh is one tiny request (Haiku, 1 output token —
+negligible), but it does count toward your own 5-hour window. Refreshes happen
+every 5 minutes by default and pause while the VS Code window is unfocused.
+
+**Token refresh:** the extension does not implement OAuth refresh — it re-reads
+`~/.claude/.credentials.json` each poll, so it uses whatever token Claude Code
+last wrote. If the token expires and Claude Code has not refreshed it, the item
+shows "Token expired — run Claude Code to refresh."
+
+## Settings
+
+| Setting | Default | Description |
+| --- | --- | --- |
+| `claudeStats.pollIntervalMinutes` | 5 | Refresh interval in minutes. |
+| `claudeStats.pauseWhenUnfocused` | true | Skip refreshes while VS Code is unfocused. |
+| `claudeStats.greenBelow` | 70 | Percent below which the item is green. |
+| `claudeStats.yellowBelow` | 90 | Percent below which the item is yellow. |
+
+## Develop
 
 ```bash
 npm install
+npm run compile   # or: npm run watch
+npm test          # runs unit tests for the pure logic
 ```
 
-## Run it (debug)
-
-1. Open this folder in VS Code.
-2. Press **F5** (Run → Start Debugging).
-   - This runs the default build task (`npm run watch`) and launches a second
-     VS Code window titled **[Extension Development Host]** with the extension
-     loaded.
-3. In that window, open any text file. The word count appears in the
-   bottom-right status bar.
-4. Click the item to see the info-message popup.
-
-> No `out/` yet? The F5 build task compiles it automatically. To compile by
-> hand, run `npm run compile`.
-
-## Develop with live reload
-
-Run the TypeScript compiler in watch mode so edits recompile on save:
-
-```bash
-npm run watch
-```
-
-Then press **F5**. After changing `src/extension.ts`, reload the Extension
-Development Host with **Ctrl+R** (Cmd+R on macOS) to pick up the new build.
-
-## Test the behavior
-
-Manual checks in the Extension Development Host:
-
-| Action                          | Expected status bar                  |
-| ------------------------------- | ------------------------------------ |
-| Open a file with text           | `✎ N words` (N = word count)         |
-| Type / delete words             | count updates immediately            |
-| Close all editors               | item disappears                      |
-| Click the item                  | info message `Current word count: N` |
-| Run command from palette        | same info message (Ctrl+Shift+P → "Show Word Count") |
-
-## Build a shareable package (.vsix)
-
-```bash
-npm install -g @vscode/vsce
-vsce package
-```
-
-Produces `status-bar-demo-0.0.1.vsix`. Install it in any VS Code via
-**Extensions view → ⋯ → Install from VSIX…**, or:
-
-```bash
-code --install-extension status-bar-demo-0.0.1.vsix
-```
+Press **F5** to launch an Extension Development Host with the extension loaded.
 
 ## Project layout
 
 ```
-package.json          extension manifest: command + activation
-tsconfig.json         TypeScript config (src → out, CommonJS, ES2022)
-src/extension.ts      activate(): creates the status bar item + listeners
-.vscode/launch.json   F5 launch config (Extension Development Host)
-.vscode/tasks.json    background tsc watch build task
-.vscodeignore         files excluded from the packaged .vsix
+package.json        manifest: commands + configuration
+src/logic.ts        pure logic (header parse, color, formatting) — unit tested
+src/api.ts          credentials read + API fetch
+src/extension.ts    vscode glue: status bar, polling, commands
+test/*.test.js      node:test unit tests against out/
 ```
-
-## Key API notes
-
-- `vscode.window.createStatusBarItem(alignment, priority)` — higher priority
-  sits further left on its side of the bar.
-- `$(icon-name)` in `.text` embeds a
-  [codicon](https://microsoft.github.io/vscode-codicons/) (e.g. `$(pencil)`).
-- `.command` makes the item clickable.
-- Items are hidden until you call `.show()`.
-- Pushing disposables to `context.subscriptions` auto-cleans them on
-  `deactivate()`.
