@@ -3,8 +3,7 @@ const assert = require('node:assert');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { readCredentials } = require('../out/api.js');
-const { classifyResponse } = require('../out/api.js');
+const { readCredentials, classifyResponse } = require('../out/api.js');
 
 function tmpFile(contents) {
   const p = path.join(os.tmpdir(), `creds-${Date.now()}-${Math.random()}.json`);
