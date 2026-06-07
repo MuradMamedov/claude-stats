@@ -1,6 +1,7 @@
 .vscode/**
 .vscode-test/**
 .agents/**
+.claude/**
 src/**
 test/**
 docs/**
@@ -11,3 +12,4 @@ tsconfig.json
 **/*.map
 **/*.ts
 node_modules/**
+*.svg
