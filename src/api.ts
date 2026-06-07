@@ -34,6 +34,21 @@ export type FetchResult =
   | { ok: true; info: RateInfo }
   | { ok: false; kind: 'noauth' | 'expired' | 'offline' };
 
+export function classifyResponse(
+  status: number,
+  headers: Record<string, string | string[] | undefined>
+): FetchResult {
+  if (status === 401) {
+    return { ok: false, kind: 'expired' };
+  }
+  // A 429 (limit reached) still carries the unified rate-limit headers, so we
+  // parse it exactly like a 2xx and let the renderer show the rejected state.
+  if ((status >= 200 && status < 300) || status === 429) {
+    return { ok: true, info: parseRateHeaders(headers) };
+  }
+  return { ok: false, kind: 'offline' };
+}
+
 export function fetchRateInfo(credentialsPath: string): Promise<FetchResult> {
   return new Promise((resolve) => {
     const creds = readCredentials(credentialsPath);
@@ -63,14 +78,7 @@ export function fetchRateInfo(credentialsPath: string): Promise<FetchResult> {
         // Drain the body; we only need the headers.
         res.on('data', () => undefined);
         res.on('end', () => {
-          const status = res.statusCode ?? 0;
-          if (status === 401) {
-            resolve({ ok: false, kind: 'expired' });
-          } else if (status >= 200 && status < 300) {
-            resolve({ ok: true, info: parseRateHeaders(res.headers) });
-          } else {
-            resolve({ ok: false, kind: 'offline' });
-          }
+          resolve(classifyResponse(res.statusCode ?? 0, res.headers));
         });
       }
     );
