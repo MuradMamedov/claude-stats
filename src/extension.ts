@@ -11,6 +11,7 @@ const USAGE_URL = 'https://claude.ai/new#settings/usage';
 
 let item: vscode.StatusBarItem;
 let timer: ReturnType<typeof setTimeout> | undefined;
+let tick: ReturnType<typeof setInterval> | undefined;
 let lastInfo: RateInfo | undefined;
 let lastUpdatedMs = 0;
 let inFlight: Promise<void> | undefined;
@@ -44,6 +45,14 @@ export function activate(context: vscode.ExtensionContext): void {
   item.show();
   void poll();
   scheduleNext();
+
+  // Re-render on a short cadence so the tooltip's "updated Ns ago" and the
+  // reset countdown advance between polls instead of freezing at render time.
+  tick = setInterval(() => {
+    if (lastInfo) {
+      renderOk();
+    }
+  }, 10_000);
 }
 
 function config() {
@@ -146,5 +155,8 @@ function renderOffline(): void {
 export function deactivate(): void {
   if (timer) {
     clearTimeout(timer);
+  }
+  if (tick) {
+    clearInterval(tick);
   }
 }
