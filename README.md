@@ -1,8 +1,8 @@
 # Claude Usage Stats
 
-[![VS Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/mmam.claude-usage-stats?label=marketplace)](https://marketplace.visualstudio.com/items?itemName=mmam.claude-usage-stats)
-[![Installs](https://img.shields.io/visual-studio-marketplace/i/mmam.claude-usage-stats)](https://marketplace.visualstudio.com/items?itemName=mmam.claude-usage-stats)
-[![Rating](https://img.shields.io/visual-studio-marketplace/r/mmam.claude-usage-stats)](https://marketplace.visualstudio.com/items?itemName=mmam.claude-usage-stats)
+[![VS Marketplace Version](https://vsmarketplacebadges.dev/version-short/mmam.claude-usage-stats.svg?label=marketplace)](https://marketplace.visualstudio.com/items?itemName=mmam.claude-usage-stats)
+[![Installs](https://vsmarketplacebadges.dev/installs-short/mmam.claude-usage-stats.svg)](https://marketplace.visualstudio.com/items?itemName=mmam.claude-usage-stats)
+[![Rating](https://vsmarketplacebadges.dev/rating-short/mmam.claude-usage-stats.svg)](https://marketplace.visualstudio.com/items?itemName=mmam.claude-usage-stats)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 A VS Code status bar item showing your **Claude 5-hour plan usage** (official,
