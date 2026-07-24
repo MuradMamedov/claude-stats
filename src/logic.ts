@@ -77,18 +77,12 @@ export function buildBarText(info: RateInfo, nowMs: number): string {
   return `$(pulse) ${pct}% · ${formatCountdown(info.fiveHourReset, nowMs)}`;
 }
 
-export function buildTooltip(
-  info: RateInfo,
-  nowMs: number,
-  lastUpdatedMs: number
-): string {
+export function buildTooltip(info: RateInfo, nowMs: number): string {
   const p5 = Math.round(info.fiveHourUtil * 100);
   const p7 = Math.round(info.sevenDayUtil * 100);
-  const agoSec = Math.max(0, Math.round((nowMs - lastUpdatedMs) / 1000));
   return [
     `5h: ${p5}% — resets ${formatClock(info.fiveHourReset)} (${formatCountdown(info.fiveHourReset, nowMs)})`,
     `7d: ${p7}% — resets ${formatClock(info.sevenDayReset)}`,
-    `status: ${info.fiveHourStatus}`,
-    `updated ${agoSec}s ago`
+    `status: ${info.fiveHourStatus}`
   ].join('\n\n');
 }

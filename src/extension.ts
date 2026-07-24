@@ -13,7 +13,6 @@ let item: vscode.StatusBarItem;
 let timer: ReturnType<typeof setTimeout> | undefined;
 let tick: ReturnType<typeof setInterval> | undefined;
 let lastInfo: RateInfo | undefined;
-let lastUpdatedMs = 0;
 let inFlight: Promise<void> | undefined;
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -46,8 +45,8 @@ export function activate(context: vscode.ExtensionContext): void {
   void poll();
   scheduleNext();
 
-  // Re-render on a short cadence so the tooltip's "updated Ns ago" and the
-  // reset countdown advance between polls instead of freezing at render time.
+  // Re-render on a short cadence so the tooltip's reset countdown advances
+  // between polls instead of freezing at render time.
   tick = setInterval(() => {
     if (lastInfo) {
       renderOk();
@@ -94,7 +93,6 @@ async function doPoll(): Promise<void> {
   const result = await fetchRateInfo(defaultCredentialsPath());
   if (result.ok) {
     lastInfo = result.info;
-    lastUpdatedMs = Date.now();
     renderOk();
     return;
   }
@@ -129,7 +127,7 @@ function renderOk(): void {
   const now = Date.now();
   const pct = Math.round(lastInfo.fiveHourUtil * 100);
   item.text = buildBarText(lastInfo, now);
-  item.tooltip = buildTooltip(lastInfo, now, lastUpdatedMs);
+  item.tooltip = buildTooltip(lastInfo, now);
   item.color = new vscode.ThemeColor(
     pickColorId(pct, lastInfo.fiveHourStatus, cfg.greenBelow, cfg.yellowBelow)
   );

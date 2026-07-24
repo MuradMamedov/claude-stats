@@ -87,9 +87,8 @@ test('buildTooltip includes both windows and status', () => {
     sevenDayReset: Math.floor(now / 1000) + 24 * 3600,
     sevenDayStatus: 'allowed'
   };
-  const tip = buildTooltip(info, now, now - 30000);
+  const tip = buildTooltip(info, now);
   assert.match(tip, /5h: 38%/);
   assert.match(tip, /7d: 23%/);
   assert.match(tip, /status: allowed/);
-  assert.match(tip, /updated 30s ago/);
 });

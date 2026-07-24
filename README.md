@@ -20,8 +20,6 @@ countdown is time until that window resets. Hover for the full breakdown:
 7d: 57% — resets 10:00
 
 status: allowed
-
-updated 0s ago
 ```
 
 ## What it does
@@ -30,8 +28,8 @@ updated 0s ago
   countdown until that window resets.
 - Color: green below 70%, yellow below 90%, red at/above 90% (or red whenever
   the API reports the window as `rejected`). Thresholds are configurable.
-- Tooltip shows the 5-hour and weekly (7-day) percentages, reset times, status,
-  and when it last updated.
+- Tooltip shows the 5-hour and weekly (7-day) percentages, reset times, and
+  status.
 - Clicking opens `https://claude.ai/new#settings/usage`.
 
 ## Status bar states
