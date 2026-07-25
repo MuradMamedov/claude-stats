@@ -65,6 +65,11 @@
           "type": "number",
           "default": 90,
           "description": "5-hour utilization percent below which the item is yellow; at or above it is red."
+        },
+        "claudeStats.model": {
+          "type": "string",
+          "default": "claude-haiku-4-5-20251001",
+          "description": "Model used for the lightweight polling request. Must be a model id your account can access — an invalid or unavailable model shows as an error in the status bar instead of usage data."
         }
       }
     }

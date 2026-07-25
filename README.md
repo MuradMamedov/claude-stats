@@ -36,7 +36,7 @@ status: allowed
 | `$(pulse) 80% · 3h17m` | Normal. Color shifts green → yellow → red as usage climbs. |
 | `$(pulse) 100%` (red) | 5-hour limit reached (`status: rejected`). |
 | `$(cloud-offline) 80%` | Offline — showing the last known value. |
-| `$(warning) Claude —` | Not logged in, token expired, or API unreachable with no cached value. Hover for the reason. |
+| `$(warning) Claude —` | Not logged in, token expired, configured model unavailable, or API unreachable with no cached value. Hover for the reason. |
 | `$(sync~spin) Claude …` | Loading the first reading. |
 
 ## How it gets the data
@@ -46,8 +46,9 @@ headers — the same numbers shown on the Claude usage page. The extension reads
 the OAuth token from `~/.claude/.credentials.json` (written by Claude Code) and
 makes a minimal request to read those headers.
 
-**Cost note:** each refresh is one tiny request (Haiku, 1 output token —
-negligible), but it does count toward your own 5-hour window. Refreshes happen
+**Cost note:** each refresh is one tiny request (Haiku by default, 1 output
+token — negligible), but it does count toward your own 5-hour window. The
+model is configurable via `claudeStats.model`. Refreshes happen
 every 5 minutes by default and pause while the VS Code window is unfocused.
 Overlapping triggers (timer, window focus, manual refresh) collapse into a
 single in-flight request, so each cycle bills at most once.
@@ -76,6 +77,7 @@ shows "Token expired — run Claude Code to refresh."
 | `claudeStats.pauseWhenUnfocused` | true | Skip scheduled refreshes while VS Code is unfocused. A refresh still fires when you focus the window again. |
 | `claudeStats.greenBelow` | 70 | Percent below which the item is green. |
 | `claudeStats.yellowBelow` | 90 | Percent below which the item is yellow; at/above it is red. |
+| `claudeStats.model` | `claude-haiku-4-5-20251001` | Model used for the polling request. An invalid/unavailable model id shows as a status-bar error instead of usage data. |
 
 ## Privacy
 
