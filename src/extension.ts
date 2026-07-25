@@ -57,14 +57,17 @@ export function activate(context: vscode.ExtensionContext): void {
   }, 10_000);
 }
 
+const DEFAULT_MODEL = 'claude-haiku-4-5-20251001';
+
 function config() {
   const c = vscode.workspace.getConfiguration('claudeStats');
+  const model = c.get<string>('model', DEFAULT_MODEL).trim();
   return {
     pollIntervalMinutes: c.get<number>('pollIntervalMinutes', 5),
     pauseWhenUnfocused: c.get<boolean>('pauseWhenUnfocused', true),
     greenBelow: c.get<number>('greenBelow', 70),
     yellowBelow: c.get<number>('yellowBelow', 90),
-    model: c.get<string>('model', 'claude-haiku-4-5-20251001')
+    model: model || DEFAULT_MODEL
   };
 }
 
