@@ -5,7 +5,7 @@ import {
   pickColorId,
   RateInfo
 } from './logic';
-import { defaultCredentialsPath, fetchRateInfo, FetchResult } from './api';
+import { defaultCredentialsPath, fetchRateInfo } from './api';
 
 const USAGE_URL = 'https://claude.ai/new#settings/usage';
 
@@ -97,17 +97,7 @@ async function doPoll(): Promise<void> {
     renderOk();
     return;
   }
-  const errorResult: Exclude<FetchResult, { ok: true }> = result;
-  if (errorResult.kind === 'modelError') {
-    renderError(
-      '$(warning) Claude —',
-      `Model "${cfg.model}" not available — ${errorResult.message}. Check the "claudeStats.model" setting.`
-    );
-    return;
-  }
-  type OtherErrorKind = 'noauth' | 'expired' | 'offline';
-  const otherKind = errorResult.kind as OtherErrorKind;
-  switch (otherKind) {
+  switch (result.kind) {
     case 'noauth':
       renderError('$(warning) Claude —', 'Not logged in — no Claude credentials found.');
       return;
@@ -117,9 +107,15 @@ async function doPoll(): Promise<void> {
     case 'offline':
       renderOffline();
       return;
+    case 'modelError':
+      renderError(
+        '$(warning) Claude —',
+        `Model "${cfg.model}" not available — ${result.message}. Check the "claudeStats.model" setting.`
+      );
+      return;
     default: {
-      const _exhaustive: never = otherKind;
-      throw new Error(`unhandled fetch error: ${String(_exhaustive)}`);
+      const _exhaustive: never = result;
+      throw new Error(`unreachable fetch result: ${JSON.stringify(_exhaustive)}`);
     }
   }
 }
