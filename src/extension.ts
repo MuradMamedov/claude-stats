@@ -5,7 +5,7 @@ import {
   pickColorId,
   RateInfo
 } from './logic';
-import { defaultCredentialsPath, fetchRateInfo } from './api';
+import { defaultCredentialsPath, fetchRateInfo, FetchResult } from './api';
 
 const USAGE_URL = 'https://claude.ai/new#settings/usage';
 
@@ -60,7 +60,8 @@ function config() {
     pollIntervalMinutes: c.get<number>('pollIntervalMinutes', 5),
     pauseWhenUnfocused: c.get<boolean>('pauseWhenUnfocused', true),
     greenBelow: c.get<number>('greenBelow', 70),
-    yellowBelow: c.get<number>('yellowBelow', 90)
+    yellowBelow: c.get<number>('yellowBelow', 90),
+    model: c.get<string>('model', 'claude-haiku-4-5-20251001')
   };
 }
 
@@ -90,30 +91,37 @@ async function doPoll(): Promise<void> {
   if (cfg.pauseWhenUnfocused && !vscode.window.state.focused && lastInfo) {
     return;
   }
-  const result = await fetchRateInfo(defaultCredentialsPath(), 'claude-haiku-4-5-20251001');
+  const result = await fetchRateInfo(defaultCredentialsPath(), cfg.model);
   if (result.ok) {
     lastInfo = result.info;
     renderOk();
     return;
   }
-  if (result.kind === 'noauth') {
-    renderError('$(warning) Claude —', 'Not logged in — no Claude credentials found.');
+  const errorResult: Exclude<FetchResult, { ok: true }> = result;
+  if (errorResult.kind === 'modelError') {
+    renderError(
+      '$(warning) Claude —',
+      `Model "${cfg.model}" not available — ${errorResult.message}. Check the "claudeStats.model" setting.`
+    );
     return;
   }
-  if (result.kind === 'expired') {
-    renderError('$(warning) Claude —', 'Token expired — run Claude Code to refresh.');
-    return;
+  type OtherErrorKind = 'noauth' | 'expired' | 'offline';
+  const otherKind = errorResult.kind as OtherErrorKind;
+  switch (otherKind) {
+    case 'noauth':
+      renderError('$(warning) Claude —', 'Not logged in — no Claude credentials found.');
+      return;
+    case 'expired':
+      renderError('$(warning) Claude —', 'Token expired — run Claude Code to refresh.');
+      return;
+    case 'offline':
+      renderOffline();
+      return;
+    default: {
+      const _exhaustive: never = otherKind;
+      throw new Error(`unhandled fetch error: ${String(_exhaustive)}`);
+    }
   }
-  if (result.kind === 'offline') {
-    renderOffline();
-    return;
-  }
-  if (result.kind === 'modelError') {
-    renderError('$(warning) Claude —', `Model unavailable: ${result.message}`);
-    return;
-  }
-  const _exhaustive: never = result.kind;
-  throw new Error(`unhandled fetch error: ${String(_exhaustive)}`);
 }
 
 function renderLoading(): void {
