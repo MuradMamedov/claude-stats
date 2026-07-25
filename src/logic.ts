@@ -45,11 +45,16 @@ export function formatCountdown(resetEpochSec: number, nowMs: number): string {
   return `${mins}m`;
 }
 
-export function formatClock(resetEpochSec: number): string {
+export function formatClock(resetEpochSec: number, includeDate = false): string {
   const d = new Date(resetEpochSec * 1000);
   const hh = String(d.getHours()).padStart(2, '0');
   const mm = String(d.getMinutes()).padStart(2, '0');
-  return `${hh}:${mm}`;
+  const time = `${hh}:${mm}`;
+  if (!includeDate) {
+    return time;
+  }
+  const month = d.toLocaleString('en-US', { month: 'short' });
+  return `${time} ${month} ${d.getDate()}`;
 }
 
 export type ColorId = 'charts.green' | 'charts.yellow' | 'charts.red';
@@ -82,7 +87,7 @@ export function buildTooltip(info: RateInfo, nowMs: number): string {
   const p7 = Math.round(info.sevenDayUtil * 100);
   return [
     `5h: ${p5}% — resets ${formatClock(info.fiveHourReset)} (${formatCountdown(info.fiveHourReset, nowMs)})`,
-    `7d: ${p7}% — resets ${formatClock(info.sevenDayReset)}`,
+    `7d: ${p7}% — resets ${formatClock(info.sevenDayReset, true)}`,
     `status: ${info.fiveHourStatus}`
   ].join('\n\n');
 }
