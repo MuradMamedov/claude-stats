@@ -32,11 +32,30 @@ const REQUEST_TIMEOUT_MS = 10_000;
 
 export type FetchResult =
   | { ok: true; info: RateInfo }
-  | { ok: false; kind: 'noauth' | 'expired' | 'offline' };
+  | { ok: false; kind: 'noauth' | 'expired' | 'offline' }
+  | { ok: false; kind: 'modelError'; message: string };
+
+function parseModelError(body: string): string | undefined {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(body);
+  } catch {
+    return undefined;
+  }
+  const err = (parsed as { error?: { type?: string; message?: string } }).error;
+  if (!err || typeof err.message !== 'string') {
+    return undefined;
+  }
+  if (err.type === 'not_found_error' || /model/i.test(err.message)) {
+    return err.message;
+  }
+  return undefined;
+}
 
 export function classifyResponse(
   status: number,
-  headers: Record<string, string | string[] | undefined>
+  headers: Record<string, string | string[] | undefined>,
+  body: string = ''
 ): FetchResult {
   if (status === 401) {
     return { ok: false, kind: 'expired' };
@@ -46,10 +65,16 @@ export function classifyResponse(
   if ((status >= 200 && status < 300) || status === 429) {
     return { ok: true, info: parseRateHeaders(headers) };
   }
+  if (status === 400 || status === 404) {
+    const message = parseModelError(body);
+    if (message) {
+      return { ok: false, kind: 'modelError', message };
+    }
+  }
   return { ok: false, kind: 'offline' };
 }
 
-export function fetchRateInfo(credentialsPath: string): Promise<FetchResult> {
+export function fetchRateInfo(credentialsPath: string, model: string): Promise<FetchResult> {
   return new Promise((resolve) => {
     const creds = readCredentials(credentialsPath);
     if (!creds?.accessToken) {
@@ -57,7 +82,7 @@ export function fetchRateInfo(credentialsPath: string): Promise<FetchResult> {
       return;
     }
     const body = JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
+      model,
       max_tokens: 1,
       messages: [{ role: 'user', content: 'hi' }]
     });
@@ -75,10 +100,13 @@ export function fetchRateInfo(credentialsPath: string): Promise<FetchResult> {
         }
       },
       (res) => {
-        // Drain the body; we only need the headers.
-        res.on('data', () => undefined);
+        // Buffer the body (tiny even on error) so classifyResponse can pull
+        // model-error detail out of 400/404 error payloads.
+        const chunks: Buffer[] = [];
+        res.on('data', (chunk: Buffer) => chunks.push(chunk));
         res.on('end', () => {
-          resolve(classifyResponse(res.statusCode ?? 0, res.headers));
+          const rawBody = Buffer.concat(chunks).toString('utf8');
+          resolve(classifyResponse(res.statusCode ?? 0, res.headers, rawBody));
         });
       }
     );

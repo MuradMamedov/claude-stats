@@ -90,27 +90,30 @@ async function doPoll(): Promise<void> {
   if (cfg.pauseWhenUnfocused && !vscode.window.state.focused && lastInfo) {
     return;
   }
-  const result = await fetchRateInfo(defaultCredentialsPath());
+  const result = await fetchRateInfo(defaultCredentialsPath(), 'claude-haiku-4-5-20251001');
   if (result.ok) {
     lastInfo = result.info;
     renderOk();
     return;
   }
-  switch (result.kind) {
-    case 'noauth':
-      renderError('$(warning) Claude —', 'Not logged in — no Claude credentials found.');
-      return;
-    case 'expired':
-      renderError('$(warning) Claude —', 'Token expired — run Claude Code to refresh.');
-      return;
-    case 'offline':
-      renderOffline();
-      return;
-    default: {
-      const _exhaustive: never = result.kind;
-      throw new Error(`unhandled fetch error: ${String(_exhaustive)}`);
-    }
+  if (result.kind === 'noauth') {
+    renderError('$(warning) Claude —', 'Not logged in — no Claude credentials found.');
+    return;
   }
+  if (result.kind === 'expired') {
+    renderError('$(warning) Claude —', 'Token expired — run Claude Code to refresh.');
+    return;
+  }
+  if (result.kind === 'offline') {
+    renderOffline();
+    return;
+  }
+  if (result.kind === 'modelError') {
+    renderError('$(warning) Claude —', `Model unavailable: ${result.message}`);
+    return;
+  }
+  const _exhaustive: never = result.kind;
+  throw new Error(`unhandled fetch error: ${String(_exhaustive)}`);
 }
 
 function renderLoading(): void {

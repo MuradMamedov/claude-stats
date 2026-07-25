@@ -73,3 +73,44 @@ test('classifyResponse: 0 (no status) is offline', () => {
   const r = classifyResponse(0, rlHeaders);
   assert.deepStrictEqual(r, { ok: false, kind: 'offline' });
 });
+
+test('classifyResponse: 404 not_found_error body is modelError', () => {
+  const body = JSON.stringify({
+    type: 'error',
+    error: { type: 'not_found_error', message: 'model: claude-bad-id' }
+  });
+  const r = classifyResponse(404, {}, body);
+  assert.deepStrictEqual(r, { ok: false, kind: 'modelError', message: 'model: claude-bad-id' });
+});
+
+test('classifyResponse: 400 invalid_request_error mentioning model is modelError', () => {
+  const body = JSON.stringify({
+    type: 'error',
+    error: { type: 'invalid_request_error', message: 'model: claude-bad-id is not supported' }
+  });
+  const r = classifyResponse(400, {}, body);
+  assert.deepStrictEqual(r, {
+    ok: false,
+    kind: 'modelError',
+    message: 'model: claude-bad-id is not supported'
+  });
+});
+
+test('classifyResponse: 404 with unparseable body falls back to offline', () => {
+  const r = classifyResponse(404, {}, 'not json');
+  assert.deepStrictEqual(r, { ok: false, kind: 'offline' });
+});
+
+test('classifyResponse: 404 with unrelated error body falls back to offline', () => {
+  const body = JSON.stringify({
+    type: 'error',
+    error: { type: 'invalid_request_error', message: 'messages: array is too long' }
+  });
+  const r = classifyResponse(404, {}, body);
+  assert.deepStrictEqual(r, { ok: false, kind: 'offline' });
+});
+
+test('classifyResponse: 404/400 with no body arg still offline (default param)', () => {
+  assert.deepStrictEqual(classifyResponse(404, {}), { ok: false, kind: 'offline' });
+  assert.deepStrictEqual(classifyResponse(400, {}), { ok: false, kind: 'offline' });
+});
