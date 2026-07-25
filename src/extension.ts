@@ -14,6 +14,7 @@ let timer: ReturnType<typeof setTimeout> | undefined;
 let tick: ReturnType<typeof setInterval> | undefined;
 let lastInfo: RateInfo | undefined;
 let inFlight: Promise<void> | undefined;
+let stickyError = false;
 
 export function activate(context: vscode.ExtensionContext): void {
   item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
@@ -34,7 +35,9 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration('claudeStats')) {
-        renderOk();
+        if (lastInfo && !stickyError) {
+          renderOk();
+        }
         scheduleNext();
       }
     })
@@ -48,7 +51,7 @@ export function activate(context: vscode.ExtensionContext): void {
   // Re-render on a short cadence so the tooltip's reset countdown advances
   // between polls instead of freezing at render time.
   tick = setInterval(() => {
-    if (lastInfo) {
+    if (lastInfo && !stickyError) {
       renderOk();
     }
   }, 10_000);
@@ -94,6 +97,7 @@ async function doPoll(): Promise<void> {
   const result = await fetchRateInfo(defaultCredentialsPath(), cfg.model);
   if (result.ok) {
     lastInfo = result.info;
+    stickyError = false;
     renderOk();
     return;
   }
@@ -108,6 +112,7 @@ async function doPoll(): Promise<void> {
       renderOffline();
       return;
     case 'modelError':
+      stickyError = true;
       renderError(
         '$(warning) Claude —',
         `Model "${cfg.model}" not available — ${result.message}. Check the "claudeStats.model" setting.`

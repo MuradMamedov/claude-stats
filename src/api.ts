@@ -42,6 +42,9 @@ function parseModelError(body: string): string | undefined {
   } catch {
     return undefined;
   }
+  if (typeof parsed !== 'object' || parsed === null) {
+    return undefined;
+  }
   const err = (parsed as { error?: { type?: string; message?: string } }).error;
   if (!err || typeof err.message !== 'string') {
     return undefined;

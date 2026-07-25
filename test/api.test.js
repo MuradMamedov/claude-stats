@@ -114,3 +114,7 @@ test('classifyResponse: 404/400 with no body arg still offline (default param)',
   assert.deepStrictEqual(classifyResponse(404, {}), { ok: false, kind: 'offline' });
   assert.deepStrictEqual(classifyResponse(400, {}), { ok: false, kind: 'offline' });
 });
+
+test('classifyResponse: 404 with JSON null body falls back to offline (does not throw)', () => {
+  assert.deepStrictEqual(classifyResponse(404, {}, 'null'), { ok: false, kind: 'offline' });
+});
